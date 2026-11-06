@@ -1,9 +1,9 @@
-import express, { Request, Response } from 'express';
-import { createServer as createViteServer } from 'vite';
+import express from 'express';
+import type { Request, Response } from 'express';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
-import { GoogleGenAI, ThinkingLevel } from '@google/genai';
+import { GoogleGenAI } from '@google/genai';
 
 dotenv.config();
 
@@ -474,8 +474,18 @@ Week 10: Stability testing under accelerated climate conditions (40°C / 75% RH)
     });
   });
 
+  // API 404 handler: ensure unhandled API endpoints always return JSON, not HTML
+  app.all('/api/*', (req: Request, res: Response) => {
+    res.setHeader('Content-Type', 'application/json');
+    res.status(404).json({
+      success: false,
+      error: `API route ${req.method} ${req.originalUrl} not found.`,
+    });
+  });
+
   // Setup Vite development middlewares or serve static build
   if (!isProduction) {
+    const { createServer: createViteServer } = await import('vite');
     const vite = await createViteServer({
       server: { middlewareMode: true },
       appType: 'spa',
