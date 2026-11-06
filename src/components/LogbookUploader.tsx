@@ -23,6 +23,7 @@ export const LogbookUploader: React.FC<LogbookUploaderProps> = ({
   const [previewFile, setPreviewFile] = useState<UploadedImage | null>(null);
   const [activeTab, setActiveTab] = useState<'images' | 'transcript'>('images');
   const [isProcessingFiles, setIsProcessingFiles] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   // Resize and compress images client-side before sending to server
@@ -205,8 +206,32 @@ export const LogbookUploader: React.FC<LogbookUploaderProps> = ({
 
         {activeTab === 'images' ? (
           <div>
-            {/* Upload Action Area */}
-            <div className="border-2 border-dashed border-rose-200 hover:border-[#801828] bg-rose-50/20 rounded-xl p-5 text-center transition">
+            {/* Upload Action Area with native Drag & Drop */}
+            <div
+              onDragOver={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setIsDragging(true);
+              }}
+              onDragLeave={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setIsDragging(false);
+              }}
+              onDrop={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setIsDragging(false);
+                if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+                  processFiles(e.dataTransfer.files);
+                }
+              }}
+              className={`border-2 border-dashed rounded-xl p-5 text-center transition ${
+                isDragging
+                  ? 'border-[#801828] bg-rose-100/50 scale-[1.01]'
+                  : 'border-rose-200 hover:border-[#801828] bg-rose-50/20'
+              }`}
+            >
               {/* General File Input (Images + PDF) */}
               <input
                 ref={fileInputRef}

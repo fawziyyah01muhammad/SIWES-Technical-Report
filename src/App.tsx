@@ -31,6 +31,69 @@ const DEFAULT_STUDENT_INFO: StudentInfo = {
   headOfDepartment: '',
 };
 
+const INITIAL_SAMPLES: SampleDataset[] = [
+  {
+    id: 'cs-fintech',
+    title: 'Computer Science & Software (Fintech Hub, Lagos)',
+    badge: 'Software & IT',
+    studentInfo: {
+      name: 'Chioma Adebayo',
+      matricNo: 'CSC/2022/4109',
+      institution: 'University of Lagos',
+      faculty: 'Faculty of Science',
+      department: 'Computer Sciences',
+      level: '400 Level',
+      hostOrg: 'Fintech Innovation Hub',
+      hostAddress: 'Herbert Macaulay Way, Yaba, Lagos State',
+      unit: 'Backend Engineering & Cloud Infrastructure Unit',
+      duration: '6 Months (April - September)',
+      academicYear: '2024/2025 Session',
+      industrySupervisor: 'Engr. Babatunde Fashola (Lead DevOps)',
+      academicSupervisor: 'Dr. (Mrs.) E. A. Ogundipe',
+      headOfDepartment: 'Prof. A. S. Balogun',
+    },
+    formatGuideline: 'Computer Science & Software Engineering 5-Chapter Format',
+    logbookNotes: `Week 1 (Orientation & Onboarding):
+- IT induction, received company security badges and GitHub access.
+- Setup Ubuntu development workstation, configured SSH keys and Docker.
+- Health and safety lecture on ergonomics and data privacy compliance.
+
+Week 2 & 3 (API Development & Database Integration):
+- Assigned to Payment Gateway Microservices team.
+- Developed RESTful API endpoints using Node.js/TypeScript and Express for webhook event processing.
+- Designed PostgreSQL relational schemas with foreign key constraints and indexed transactional tables.
+
+Week 4 & 5 (Payment Reconciliation & Redis Caching):
+- Integrated Redis cache cluster to store idempotent payment transaction keys, preventing double-debit anomalies.
+- Handled network timeout retry mechanisms using exponential backoff algorithms.`,
+  },
+  {
+    id: 'mech-power',
+    title: 'Mechanical Engineering (Power Station, Ogun)',
+    badge: 'Engineering',
+    studentInfo: {
+      name: 'Emeka Emmanuel Okafor',
+      matricNo: 'MEE/2021/0892',
+      institution: 'Federal University of Technology, Owerri',
+      faculty: 'School of Engineering and Engineering Technology',
+      department: 'Mechanical Engineering',
+      level: '400 Level',
+      hostOrg: 'Power Generation Complex',
+      hostAddress: 'Ikorodu Power Station Complex, Lagos State',
+      unit: 'Turbine Maintenance & Auxiliary Systems Department',
+      duration: '6 Months',
+      academicYear: '2024/2025 Session',
+      industrySupervisor: 'Engr. K. O. Alabi, FNSE (Chief Maintenance Engineer)',
+      academicSupervisor: 'Prof. C. I. Nwachukwu',
+      headOfDepartment: 'Engr. Dr. P. O. Eze',
+    },
+    formatGuideline: 'Engineering & Technology 5-Chapter Format',
+    logbookNotes: `Week 1: General Safety Induction, permit-to-work (PTW) procedures, PPE issuance (safety helmet, steel-toe boots, ear defenders).
+Week 2-3: Gas Turbine Component Inspection. Studied axial flow compressor blades for foreign object damage (FOD).
+Week 4-5: Overhaul of centrifugal boiler feed pump and mechanical seal replacement.`,
+  },
+];
+
 export default function App() {
   const [studentInfo, setStudentInfo] = useState<StudentInfo>(DEFAULT_STUDENT_INFO);
   const [images, setImages] = useState<UploadedImage[]>([]);
@@ -55,10 +118,10 @@ export default function App() {
   // Guidelines modal
   const [isTipsOpen, setIsTipsOpen] = useState(false);
 
-  // Sample datasets
-  const [samples, setSamples] = useState<SampleDataset[]>([]);
+  // Sample datasets initialized with fallback presets
+  const [samples, setSamples] = useState<SampleDataset[]>(INITIAL_SAMPLES);
 
-  // Fetch sample datasets on mount
+  // Fetch updated sample datasets on mount
   useEffect(() => {
     fetch('/api/sample-datasets')
       .then((res) => {
@@ -69,7 +132,7 @@ export default function App() {
         return null;
       })
       .then((data) => {
-        if (data && data.samples) {
+        if (data && data.samples && data.samples.length > 0) {
           setSamples(data.samples);
         }
       })
@@ -109,14 +172,21 @@ export default function App() {
 
   const handleGenerateReport = async () => {
     // Validation
-    if (!studentInfo.name.trim() || !studentInfo.institution.trim()) {
-      setError('Please provide at least the Student Full Name and Higher Institution.');
+    if (!studentInfo.name.trim()) {
+      setError('Please provide your Student Full Name in Step 1.');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
+
+    if (!studentInfo.institution.trim()) {
+      setError('Please provide your Higher Institution name in Step 1.');
       window.scrollTo({ top: 0, behavior: 'smooth' });
       return;
     }
 
     if (images.length === 0 && (!logbookNotes || logbookNotes.trim().length === 0)) {
-      setError('Please upload scanned logbook page photos or type/paste your weekly logbook activities.');
+      setError('Please upload your scanned logbook (PDF or page photos) or enter your weekly activities in Step 2.');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
       return;
     }
 
@@ -195,6 +265,7 @@ export default function App() {
       console.error('Report generation error:', err);
       const msg = err instanceof Error ? err.message : 'An error occurred during report generation.';
       setError(msg);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };
 
@@ -318,6 +389,35 @@ export default function App() {
 
             {/* Generate CTA Button Container */}
             <div className="mt-8 mb-12 flex flex-col items-center justify-center">
+              {error && (
+                <div className="mb-4 w-full p-4 bg-rose-50 border border-rose-300 rounded-xl text-rose-900 text-xs sm:text-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs">
+                  <div className="flex items-start space-x-3">
+                    <AlertCircle className="w-5 h-5 text-[#801828] shrink-0 mt-0.5" />
+                    <div>
+                      <strong className="block font-bold text-[#6B1522]">Unable to Generate Report:</strong>
+                      <p className="mt-0.5 text-gray-700">{error}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-2 shrink-0">
+                    <button
+                      type="button"
+                      onClick={handleGenerateReport}
+                      className="inline-flex items-center space-x-1.5 px-3 py-1.5 bg-[#801828] hover:bg-[#6B1522] text-white text-xs font-semibold rounded-lg shadow-xs transition"
+                    >
+                      <RotateCcw className="w-3.5 h-3.5" />
+                      <span>Retry</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setError(null)}
+                      className="text-gray-500 hover:text-gray-800 text-xs font-semibold px-2 py-1"
+                    >
+                      Dismiss
+                    </button>
+                  </div>
+                </div>
+              )}
+
               <button
                 type="button"
                 disabled={isGenerating}
